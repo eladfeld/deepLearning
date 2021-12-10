@@ -1,25 +1,18 @@
 import numpy as np
 from Layer import Layer
-from ActiveLayer import ActiveLayer
-
-
-
-def tanh(x):
-    return np.tanh(x);
-
-def tanh_prime(x):
-    return 1-np.tanh(x)**2;
-
-
 
 class NN:
-    def __init__(self, loss, d_loss, learning_rate,  architecture):
+    def __init__(self, loss, d_loss, layer_dims, learning_rate):
         self.layers = []
         self.loss = loss
         self.d_loss = d_loss
-        for i in range(len(architecture) - 1):
-            self.layers.append(Layer(architecture[i], architecture[i + 1], learning_rate))
-            self.layers.append(ActiveLayer(tanh, tanh_prime))
+        for i in range(len(layer_dims) - 1):
+            self.layers.append(Layer(layer_dims[i], layer_dims[i + 1], learning_rate))
+
+
+    def add(self, layer):
+        self.layers.append(layer)
+
 
     def predict(self, input):
         samples = len(input)
@@ -40,7 +33,7 @@ class NN:
                 for layer in self.layers:
                     output = layer.forward_prop(output)
 
-                err +=self.loss(y_train[j], output)
+                err += self.loss(y_train[j], output)
 
                 error = self.d_loss(y_train[j], output)
                 for layer in reversed(self.layers):

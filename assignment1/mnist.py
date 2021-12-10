@@ -1,5 +1,5 @@
 import numpy as np
-from NN import NN
+from NN import NN, tanh, tanh_prime
 from Layer import Layer
 from ActiveLayer import ActiveLayer
 from matplotlib import pyplot as plt

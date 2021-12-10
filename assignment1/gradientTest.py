@@ -40,6 +40,7 @@ def grad_test_softmax():
         F1 = F0 + epsk * np.dot(g0, d)
         y0[k] = np.abs(Fk - F0)
         y1[k] = np.abs(Fk - F1)
+
         print(f'{k} \t {y0[k]} \t {y1[k]}')
     return y0, y1
 

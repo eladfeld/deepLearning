@@ -29,9 +29,9 @@ class OutputLayer(Layer):
 
     def backward_prop(self, reals):
         output_err = self.output - reals
-        input_err = np.dot(output_err, self.whigts.T)
+        input_err = np.dot(output_err, self.weights.T)
         weights_err = np.dot(self.input.T, output_err)
 
-        self.whigts -= self.learning_rate * weights_err
+        self.weights -= self.learning_rate * weights_err
         self.bias -= self.learning_rate * np.mean(output_err)
         return input_err

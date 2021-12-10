@@ -28,7 +28,18 @@ gmm = {
     'batch_size': 10000
 }
 
-data = gmm
+resnet_swissroll = {
+    'name': "Res Swiss Roll",
+    'path': './data/SwissRollData.mat',
+    'hidden_dims': [30, 30, 30],
+    'lr': 0.00001,
+    'epochs': 500,
+    'batch_size': 10000,
+    'learning_rate_decay': 0.99,
+    'resnet': True
+}
+
+data = resnet_swissroll
 
 DATA_NAME = data['name']
 
@@ -45,11 +56,14 @@ layer_dims = [in_dim] + data['hidden_dims'] + [out_dim]
 LR = data['lr']
 EPOCHS = data['epochs']
 BATCH_SIZE = data['batch_size']
+resnet = 'resnet' in data and data['resnet']
+learning_rate_decay = .99 if 'learning_rate_decay' not in data else data['learning_rate_decay']
+
 
 print(f"in dim: {in_dim}\nout dim: {out_dim}\ntraining samples: {X.shape[0]}\nvalidation samples: {Xv.shape[0]}")
 
 #Run
-net = NN(layer_dims=layer_dims, learning_rate=LR, Xv=Xv, Yv=Yv)
+net = NN(layer_dims=layer_dims, learning_rate=LR, Xv=Xv, Yv=Yv, learning_rate_decay=learning_rate_decay, resnet=resnet)
 err_train, acc_train, err_val, acc_val = net.fit(X, Y, epochs=EPOCHS, batch_size=BATCH_SIZE)
 graph_err_and_acc_by_epoch(name=f"{DATA_NAME} Training", err=err_train, acc=acc_train)
 graph_err_and_acc_by_epoch(name=f"{DATA_NAME} Validation", err=err_val, acc=acc_val)

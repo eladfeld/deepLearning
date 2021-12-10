@@ -4,8 +4,10 @@ import numpy as np
 from Layer import Layer
 from OutputLayer import OutputLayer
 from SGD import unison_shuffled_copies
+from ResLayer import ResLayer
 
 #region Functions
+
 
 def cross_entropy(real, pred):
     (m, n) = pred.shape
@@ -54,15 +56,26 @@ def graph_err_and_acc_by_epoch(name, err, acc):
 #endregion
 
 class NN:
-    def __init__(self, layer_dims, learning_rate, Xv, Yv):
+    def __init__(self, layer_dims, learning_rate, Xv, Yv, learning_rate_decay=0.99, resnet=False):
+        self.learning_rate_decay = learning_rate_decay
         self.layers = []
         self.loss = cross_entropy
         self.d_loss = cross_prime
-        for i in range(len(layer_dims) - 2):
-            self.layers.append(Layer(layer_dims[i], layer_dims[i + 1], learning_rate))
+        self.init_layers(layer_dims, learning_rate, resnet)
         self.layers.append((OutputLayer(layer_dims[-2], layer_dims[-1], learning_rate)))
         self.X_validation = Xv
         self.Y_validation = Yv
+    def init_layers(self, layer_dims, learning_rate, resnet):
+        if not resnet:
+            for i in range(len(layer_dims) - 2):
+                self.layers.append(Layer(layer_dims[i], layer_dims[i + 1], learning_rate))
+        else:
+            for i in range(len(layer_dims) - 2):
+                if layer_dims[i] == layer_dims[i + 1]:
+                    self.layers.append(ResLayer(layer_dims[i], layer_dims[i + 1], learning_rate))
+                else:
+                    self.layers.append(Layer(layer_dims[i], layer_dims[i + 1], learning_rate))
+
 
     def predict(self, input):
         output = input
@@ -93,7 +106,7 @@ class NN:
             error_list.append(err)
             acc_list.append(n_correct / len(x_train))
             v_err, v_acc = self.validate(v_err, v_acc)
-            self.decay_learning_rate(.99)
+            self.decay_learning_rate(self.learning_rate_decay)
             # print('epoch %d/%d   error=%f' % (i + 1, epochs, err))
         return error_list, acc_list, v_err, v_acc
 

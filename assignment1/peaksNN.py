@@ -1,10 +1,10 @@
 from NN import NN, graph_err_and_acc_by_epoch
 from DataLoader import DataLoader
 
-DATA_NAME = "Swiss Roll"
+DATA_NAME = "Peaks"
 
 #Data
-dl = DataLoader('./data/SwissRollData.mat')
+dl = DataLoader('./data/PeaksData.mat')
 X = dl.training_inputs.T
 Y = dl.training_labels.T
 Xv = dl.validation_inputs.T
@@ -27,8 +27,3 @@ err_train, acc_train, err_val, acc_val = net.fit(X, Y, epochs=EPOCHS, batch_size
 graph_err_and_acc_by_epoch(name=f"{DATA_NAME} Training", err=err_train, acc=acc_train)
 
 graph_err_and_acc_by_epoch(name=f"{DATA_NAME} Validation", err=err_val, acc=acc_val)
-
-
-
-
-

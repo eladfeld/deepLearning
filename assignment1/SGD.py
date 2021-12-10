@@ -73,6 +73,8 @@ def cross_entropy(pred, real):
     numerate = np.sum(numerate)
     return numerate / (-m)
 
+def cross_prime(preds, reals):
+    return preds - reals
 
 def ce_grad_wrw(preds, reals, inputs):
     return np.dot((preds - reals.T), inputs)

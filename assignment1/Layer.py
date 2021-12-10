@@ -31,6 +31,6 @@ class Layer:
         weights_err = np.dot(self.input.T, output_err)
 
         self.whigts -= self.learning_rate * weights_err
-        self.bias -= self.learning_rate * output_err
+        self.bias -= self.learning_rate * np.mean(output_err)
         return input_err
 

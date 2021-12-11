@@ -11,18 +11,44 @@ def one_hot_vec(size, idx=0):
 _input = np.random.normal(size=(3, 1))
 _real = one_hot_vec(out_dim)
 
+
+def softmax_grad(Z):
+    jack = [None] * in_dim
+    sm = softmax(Z)
+    for i in range(in_dim):
+        row = [None] * out_dim
+        for j in range(in_dim):
+            if i == j:
+                row[j] = sm[i] * (np.ones(len(Z)) - sm[i])
+            else:
+                row[j] = - sm[i] * sm[j]
+        jack[i] = row
+    return np.array(jack)
+
+def ce_grad(S, Y):
+    return -Y * np.log(S)
+
+
 def F(w):
     W = w.reshape((out_dim, in_dim))
     z = np.dot(W, _input)
     sm = softmax(z) #b can be anything, so zero
     return cross_entropy(sm, _real)
 
+# def g_F(w):
+#     W = w.reshape((in_dim, out_dim))
+#     z = _input.T @ W
+#     output_matrix = ce_grad_wrw(softmax(z), _real.T, _input.T)
+#     output_vec = output_matrix.reshape(9)
+#     return output_vec
 def g_F(w):
-    W = w.reshape((out_dim, in_dim))
-    z = W @ _input
-    output_matrix = ce_grad_wrw(softmax(z), _real.T, _input.T)
-    output_vec = output_matrix.reshape(9)
-    return output_vec
+    x, r = _input, _real
+    w = w.reshape(in_dim, out_dim)
+    z = w @ x
+    sm_grad = softmax_grad(z)
+    cm = sm_grad @ z
+    cg = ce_grad(cm, r) @ cm
+    return cg
 
 def grad_test_softmax():
     n = in_dim * out_dim

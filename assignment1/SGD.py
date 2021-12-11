@@ -77,7 +77,7 @@ def cross_prime(preds, reals):
     return preds - reals
 
 def ce_grad_wrw(preds, reals, inputs):
-    return np.dot((preds - reals.T), inputs)
+    return np.dot(inputs.T, (preds - reals))
 
 
 def ce_grad_wrb(preds, reals):

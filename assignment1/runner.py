@@ -31,9 +31,9 @@ gmm = {
 resnet_swissroll = {
     'name': "Res Swiss Roll",
     'path': './data/SwissRollData.mat',
-    'hidden_dims': [30, 30, 30],
+    'hidden_dims': [10, 30, 30, 30, 10],
     'lr': 0.00001,
-    'epochs': 500,
+    'epochs': 300,
     'batch_size': 10000,
     'learning_rate_decay': 0.99,
     'resnet': True

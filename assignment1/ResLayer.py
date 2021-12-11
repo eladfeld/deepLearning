@@ -21,13 +21,13 @@ class ResLayer(Layer):
         W2 = self.weights_2
         X = self.input
         V = output_err
-        B = self.bias
         Z = self.z
-
-        dW1 = X.T @ (self.activation_prime(Z) * (V @ W2))
-        dW2 = self.activation_prime(Z).T @ V
-        dB = self.activation_prime(Z) * (V @ W2)
-        input_error = V + (self.activation(Z) * (V @ W2)) @ W1
+        VdotW2T = V @ W2.T
+        activationPrimeZ = self.activation_prime(Z)
+        dW1 = X.T @ (activationPrimeZ * VdotW2T)
+        dW2 = V.T @ activationPrimeZ
+        dB = activationPrimeZ * VdotW2T
+        input_error = V + (activationPrimeZ * VdotW2T) @ W1
 
         self.weights -= self.learning_rate * dW1
         self.weights_2 -= self.learning_rate * dW2

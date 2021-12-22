@@ -21,11 +21,13 @@ class data_maker():
         return torch.Tensor(data[:train_limit]), torch.Tensor(data[train_limit:])
 
 
-def function_that_prints_the_graphs_but_with_extra_words_in_the_name(data, index, title):
+def function_that_prints_the_graphs_but_with_extra_words_in_the_name(input, reconstruction, index, title):
     plt.title(f'{title} - {index + 1}')
     plt.xlabel('time')
     plt.ylabel('signal')
-    plt.plot(data[index])
+    plt.plot(input[index], label='input')
+    plt.plot(reconstruction[index], label='reconstruction')
+    plt.legend()
     plt.show()
 
 # dm = data_maker()

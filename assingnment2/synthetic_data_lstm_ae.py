@@ -77,6 +77,5 @@ for epoch in range(NUM_EPOCHS):
 recon = model(test_data).reshape(test_data.shape[0], SEQUENCE_SIZE)
 
 for i in range(3):
-    function_that_prints_the_graphs_but_with_extra_words_in_the_name(test_data.detach().numpy(), i, 'synthetic input')
-    function_that_prints_the_graphs_but_with_extra_words_in_the_name(recon.detach().numpy(), i, 'synthetic reconstruction')
+    function_that_prints_the_graphs_but_with_extra_words_in_the_name(test_data.detach().numpy(),recon.detach().numpy(), i, 'synthetic input')
 

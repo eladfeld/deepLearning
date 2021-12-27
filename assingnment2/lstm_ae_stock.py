@@ -1,22 +1,40 @@
 import pandas as pd
-from matplotlib import pyplot as plt
-import torch
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
 
-from assingnment2.lstm_ae_toy import function_that_prints_the_graphs_but_with_extra_words_in_the_name
 
 stocks = pd.read_csv('data/SP 500 Stock Prices 2014-2017.csv')
 stocks = stocks.sort_values(['symbol', 'date']).drop(['open', 'close', 'low', 'volume', 'date'], axis=1)
+
+
 amzn = stocks[stocks.symbol == 'AMZN'].drop(['symbol'], axis=1)
 googl = stocks[stocks.symbol == 'GOOGL'].drop(['symbol'], axis=1)
-
-
 amzn = torch.tensor(amzn['high'].values).float()
 googl = torch.tensor(googl['high'].values).float()
+
+names = stocks['symbol'].unique().tolist()
+all_stocks = []
+for name in names:
+    to_add = stocks[stocks.symbol == name].drop(['symbol'], axis=1)
+    to_add = torch.tensor(to_add['high'].values).float()
+    all_stocks.append(to_add)
+
+#data preprocessing - remove short tensor and tensors with Nan values
+all_stocks = [x for x in all_stocks if x.shape[0] > 1000]
+nan_indices = []
+for stock_idx in reversed(range(len(all_stocks))):
+    if torch.isnan(all_stocks[stock_idx]).any():
+        del names[stock_idx]
+        del all_stocks[stock_idx]
+
+
+
+limit = int(len(all_stocks) * 0.8)
+train_data = all_stocks[:limit]
+test_data = all_stocks[limit:]
+
 
 def print_graphs(stocks, title):
     plt.plot(stocks)
@@ -25,13 +43,11 @@ def print_graphs(stocks, title):
     plt.title(title)
     plt.show()
 
-def split_data_into_seqs_partions(stocks, sequnce_length):
-    print_graphs(stocks.detach().numpy(), "pre split data")
-    tuples = torch.split(stocks, sequnce_length)#[0:-1]
-    tnsr = torch.stack(tuples)
-    print_graphs(tnsr.detach().numpy(), "split data")
-    return tnsr
 
+def split_data_into_seqs_partions(stocks, sequnce_length):
+    tuples = torch.split(stocks, sequnce_length)[0:-1]
+    tnsr = torch.stack(tuples)
+    return tnsr
 
 
 class AutoEncoder(nn.Module):
@@ -50,50 +66,76 @@ class AutoEncoder(nn.Module):
         return out
 
 # HP
-BATCH_SIZE = 50
+BATCH_SIZE = 10
 HIDDEN_STATE_SIZE = 10
-LEARNING_RATE = 1e-4
-GRADIENT_CLIPPING = 1e-4
+LEARNING_RATE = 1e-3
 
 # constant
-NUM_LAYERS = 2
-WEIGHTS_DECAY = 1e-5
-NUM_EPOCHS = 200
-SEQUENCE_SIZE = 19
-INPUT_SIZE = SEQUENCE_SIZE
+NUM_LAYERS = 1
+NUM_EPOCHS = 30
+SEQUENCE_SIZE = 100
+INPUT_SIZE = 1
 
-google_seqs = split_data_into_seqs_partions(googl, SEQUENCE_SIZE) /1200
-amzn_seqs = split_data_into_seqs_partions(amzn, SEQUENCE_SIZE) /1200
 
-NUM_SEQUENCES = len(google_seqs)
+def split_data(data):
+    spliited_data = split_data_into_seqs_partions(data, SEQUENCE_SIZE)
+    return spliited_data
+
+
+def normalize_data(data):
+    m = torch.min(data).detach().numpy()
+    M = torch.max(data).detach().numpy()
+    normlized_data = (data - m) / (M - m)
+    denormlize = lambda data: data * (M - m) + m
+    return normlized_data, denormlize
+
 
 model = AutoEncoder()
 critertion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
-outputs = []
 
-def train(data):
+def train(stocks):
     for epoch in range(NUM_EPOCHS):
         epoch_loss = 0
-        recons = []
-        for i in range(0, data.shape[0], BATCH_SIZE):
-            seq = data[i: i + BATCH_SIZE]
-            recon = model(seq).reshape(BATCH_SIZE, SEQUENCE_SIZE)
-            loss = critertion(recon, seq)
-            epoch_loss += loss
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            recons += list(recon.flatten().detach().numpy())
-        outputs.append(epoch_loss)
+        for stock in stocks:
+            data = split_data(stock)
+            data, _ = normalize_data(data)
+            for i in range(0, data.shape[0], BATCH_SIZE):
+                seq = data[i: i + BATCH_SIZE]
+                recon = model(seq).reshape(BATCH_SIZE, SEQUENCE_SIZE)
+                loss = critertion(recon, seq)
+                epoch_loss += loss
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
         print(f'epoch: {epoch}\tepoch_loss: {epoch_loss}')
-    print_graphs(data.detach().numpy(), "original")
-    print_graphs(recons, "recon")
 
 
+def test(stocks):
+    losses = []
+    index = limit
+    for stock in stocks:
+        data = split_data(stock)
+        data, denormalize = normalize_data(data)
+        recon = model(data).reshape(data.shape)
+        loss = critertion(recon, data)
+        losses.append(loss)
+        graph_render(denormalize(data.detach().numpy().flatten()), denormalize(recon.detach().numpy().flatten()), names[index])
+        index += 1
 
-train(google_seqs)
-outputs = [x.detach().numpy() for x in outputs]
-plt.plot(outputs)
-plt.show()
+def graph_render(orig, recon, data_name):
+    plt.title(f'{data_name} stocks lr:{LEARNING_RATE}')
+    plt.xlabel('time')
+    plt.ylabel('daily high')
+    plt.plot(orig, label='input')
+    plt.plot(recon, label='reconstruction')
+    plt.legend()
+    plt.show()
+
+
+train(train_data)
+
+test(test_data)
+
+

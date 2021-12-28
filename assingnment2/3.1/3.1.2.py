@@ -1,23 +1,21 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torchvision import datasets, transforms
+from torchvision import transforms
 from lstm_ae_toy import data_maker, SEQUENCE_SIZE, NUM_SEQUENCES, \
     function_that_prints_the_graphs_but_with_extra_words_in_the_name
 
 transform = transforms.ToTensor()
 
 # HP
-BATCH_SIZE = 1000
-HIDDEN_STATE_SIZE = 4
-LEARNING_RATE = 1e-3
-GRADIENT_CLIPPING = 1e-4
+BATCH_SIZE = 50
+HIDDEN_STATE_SIZE = 40
+LEARNING_RATE = 5e-3
 
 # constant
 INPUT_SIZE = 1
 NUM_LAYERS = 1
-WEIGHTS_DECAY = 1e-5
-NUM_EPOCHS = 200
+NUM_EPOCHS = 150
 
 dm = data_maker()
 train_and_validation_data, test_data = dm.make()
@@ -28,13 +26,14 @@ class AutoEncoder(nn.Module):
         super().__init__()
         self.encoder = nn.LSTM(input_size=INPUT_SIZE, hidden_size=HIDDEN_STATE_SIZE, num_layers=NUM_LAYERS,
                                batch_first=True)
-        self.decoder = nn.LSTM(input_size=HIDDEN_STATE_SIZE, hidden_size=INPUT_SIZE, num_layers=NUM_LAYERS,
+        self.decoder = nn.LSTM(input_size=HIDDEN_STATE_SIZE, hidden_size=SEQUENCE_SIZE, num_layers=NUM_LAYERS,
                                batch_first=True)
 
     def forward(self, x):
         integer = int(SEQUENCE_SIZE / INPUT_SIZE)
         x = x.reshape(x.shape[0], integer, INPUT_SIZE)
         out, hidden = self.encoder(x)  # out: tensor of shape (batch_size, seq_length, hidden_size)
+        out = out[:, -1:, :]
         out, hidden = self.decoder(out)
 
         return out
@@ -42,7 +41,8 @@ class AutoEncoder(nn.Module):
 
 model = AutoEncoder()
 critertion = nn.MSELoss()
-optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHTS_DECAY)
+optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
+# scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
 
 outputs = []
 
@@ -70,9 +70,11 @@ for epoch in range(NUM_EPOCHS):
 
     print(f'Epoch:{epoch + 1}, train - Loss:{loss.item():.4f} .... validation - loss:{v_loss.item():.4f}')
     recon = model(test_data).reshape(test_data.shape[0], SEQUENCE_SIZE)
+    if epoch % 30 == 0:
+        function_that_prints_the_graphs_but_with_extra_words_in_the_name(test_data.detach().numpy(), recon.detach().numpy(), 1, f'synthetic input test epoch #{epoch}')
     t_loss = critertion(recon, test_data)
     optimizer.zero_grad()
-    print(f"this is the final loss for the training period, mmmm sir: {t_loss}")
+    #print(f"this is the final loss for the training period, mmmm sir: {t_loss}")
 
 recon = model(test_data).reshape(test_data.shape[0], SEQUENCE_SIZE)
 

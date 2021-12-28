@@ -5,7 +5,7 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 
 
-stocks = pd.read_csv('data/SP 500 Stock Prices 2014-2017.csv')
+stocks = pd.read_csv('../data/SP 500 Stock Prices 2014-2017.csv')
 stocks = stocks.sort_values(['symbol', 'date']).drop(['open', 'close', 'low', 'volume', 'date'], axis=1)
 
 
@@ -61,7 +61,7 @@ class AutoEncoder(nn.Module):
     def forward(self, x):
         integer = int(SEQUENCE_SIZE / INPUT_SIZE)
         x = x.reshape(x.shape[0], integer, INPUT_SIZE)
-        out, hidden = self.encoder(x)  # out: tensor of shape (batch_size, seq_length, hidden_size)
+        out, hidden = self.encoder(x)[:,-1:,:]  # out: tensor of shape (batch_size, seq_length, hidden_size)
         out, hidden = self.decoder(out)
         return out
 
